@@ -1,163 +1,250 @@
-from kivymd.app import MDApp
-from kivy.uix.button import Button
-from kivy.uix.screenmanager import Screen, ScreenManager
-from kivymd.uix.screen import MDScreen
-from kivy.clock import Clock
-from kivy.uix.widget import Widget
-from kivymd.uix.dialog import MDDialog
-from kivy.uix.textinput import TextInput
-from kivy.config import Config
-from kivymd.uix.label import MDLabel
-from kivy.core.window import Window
 from kivy.lang import Builder
-import pyrebase
+from kivymd.app import MDApp
+from kivy.uix.screenmanager import ScreenManager, Screen
+import json
+from kivymd.uix.button import MDFlatButton
+from kivymd.uix.dialog import MDDialog
+import requests
 
-s = """
+help_str = '''
 ScreenManager:
-    MenuScreen:
-    ProfileScreen:
-    UploadScreen:
+    WelcomeScreen:
+    MainScreen:
     LoginScreen:
-<MenuScreen>:
-    name: 'menu'
-    MDRectangleFlatButton:
-        text: 'Profile'
-        pos_hint: {'center_x':0.5,'center_y':0.6}
-        on_press: root.manager.current = 'profile'
-    MDRectangleFlatButton:
-        text: 'Upload'
-        pos_hint: {'center_x':0.5,'center_y':0.5}
-        on_press: root.manager.current = 'upload'
-    MDRectangleFlatButton:
-        text: 'backlogin'
-        pos_hint: {'center_x':0.5,'center_y':0.4}
-        on_press: root.manager.current = 'login'
-<ProfileScreen>:
-    name: 'profile'
+    SignupScreen:
+
+<WelcomeScreen>:
+    name:'welcomescreen'
     MDLabel:
-        text: 'Profile'
-        halign: 'center'
-    MDRectangleFlatButton:
-        text: 'Back'
-        pos_hint: {'center_x':0.5,'center_y':0.1}
-        on_press: root.manager.current = 'menu' 
-<UploadScreen>:
-    name: 'upload'
-    BoxLayout:
-        orientation: 'vertical'
-        MDToolbar:
-            title: 'Entered'
-            left_action_items: [["menu", lambda x: app.navigation_draw()]]
-            right_action_items: [["dots-vertical", lambda x: app.callback()], ["clock", lambda x: app.callback_2()]]
-            elevation:5
+        text:'Login'
+        font_style:'H2'
+        halign:'center'
+        pos_hint: {'center_y':0.9}
+    MDLabel:
+        text:'&'
 
-        MDLabel:
-            text: 'hello world'
-            halign: 'center'
-        MDBottomAppBar:
-            MDToolbar:
-                title: 'Demo'
-                icon: 'language-python'
-                type: 'bottom'
-                left_action_items: [["coffee", lambda x: app.navigation_draw()]]
-                on_action_button: root.manager.current = 'menu' 
+        font_style:'H2'
+        halign:'center'
+        pos_hint: {'center_y':0.7}
+    MDLabel:
+        text:'Signup'
+        font_style:'H2'
+        halign:'center'
+        pos_hint: {'center_y':0.5}
+
+    MDRaisedButton:
+        text:'Login'
+        pos_hint : {'center_x':0.4,'center_y':0.3}
+        size_hint: (0.13,0.1)
+        on_press: 
+            root.manager.current = 'loginscreen'
+            root.manager.transition.direction = 'left'
+    MDRaisedButton:
+        text:'Signup'
+        pos_hint : {'center_x':0.6,'center_y':0.3}
+        size_hint: (0.13,0.1)
+        on_press:
+            root.manager.current = 'signupscreen'
+            root.manager.transition.direction = 'left'
+
 <LoginScreen>:
-    name:"login"
-    MDFloatLayout:
+    name:'loginscreen'
+    MDLabel:
+        text:'Login'
+        font_style:'H2'
+        halign:'center'
+        pos_hint: {'center_y':0.9}
 
-        MDTextField:
-            id:email
-            hint_text: "Enter username"
-            helper_text: "or click on forgot username"
-            helper_text_mode: "on_focus"
-            icon_right: "android"
-            icon_right_color: app.theme_cls.primary_color
-            pos_hint:{'center_x': 0.5, 'center_y': 0.7}
-            size_hint_x:None
-            width:300
-            
-        MDTextField:
-            id:password
-            hint_text: "Enter password"
-            helper_text: "or click on forgot password"
-            helper_text_mode: "on_focus"
-            icon_right: "lock"
-            icon_right_color: app.theme_cls.primary_color
-            pos_hint:{'center_x': 0.5, 'center_y': 0.58}
-            size_hint_x:None
-            width:300
-        MDRaisedButton:
-            text:"LOGIN"
-            pos_hint:{'center_x': 0.5, 'center_y': 0.5}
-            md_bg_color: 1, 0, 1, 1
-            on_press: root.manager.current = 'menu'
-        """
-LO = '''
-MDScreen:
-     '''
+    MDTextField:
 
-class MenuScreen(Screen):
+        id:login_email
+        pos_hint: {'center_y':0.6,'center_x':0.5}
+        size_hint : (0.7,0.1)
+        hint_text: 'Email'
+        helper_text:'Required'
+        helper_text_mode:  'on_error'
+        icon_right: 'account'
+        icon_right_color: app.theme_cls.primary_color
+        required: True
+        mode: "rectangle"
+    MDTextField:
+        id:login_password
+        pos_hint: {'center_y':0.4,'center_x':0.5}
+        size_hint : (0.7,0.1)
+        hint_text: 'Password'
+        helper_text:'Required'
+        helper_text_mode:  'on_error'
+        icon_right: 'account'
+        icon_right_color: app.theme_cls.primary_color
+        required: True
+        mode: "rectangle"
+
+    MDRaisedButton:
+        text:'Login'
+        size_hint: (0.13,0.07)
+        pos_hint: {'center_x':0.5,'center_y':0.2}
+        on_press:
+            app.login()
+            app.username_changer() 
+
+
+
+    MDTextButton:
+        text: 'Create an account'
+        pos_hint: {'center_x':0.5,'center_y':0.1}
+        on_press:
+            root.manager.current = 'signupscreen'
+            root.manager.transition.direction = 'up'
+
+
+<SignupScreen>:
+    name:'signupscreen'
+    MDLabel:
+        text:'Signup'
+        font_style:'H2'
+        halign:'center'
+        pos_hint: {'center_y':0.9}
+
+    MDTextField:
+        id:signup_email
+        pos_hint: {'center_y':0.6,'center_x':0.5}
+        size_hint : (0.7,0.1)
+        hint_text: 'Email'
+        helper_text:'Required'
+        helper_text_mode:  'on_error'
+        icon_right: 'account'
+        icon_right_color: app.theme_cls.primary_color
+        required: True
+        mode: "rectangle"
+    MDTextField:
+        id:signup_username
+        pos_hint: {'center_y':0.75,'center_x':0.5}
+        size_hint : (0.7,0.1)
+        hint_text: 'Username'
+        helper_text:'Required'
+        helper_text_mode:  'on_error'
+        icon_right: 'account'
+        icon_right_color: app.theme_cls.primary_color
+        required: True
+    MDTextField:
+        id:signup_password
+        pos_hint: {'center_y':0.4,'center_x':0.5}
+        size_hint : (0.7,0.1)
+        hint_text: 'Password'
+        helper_text:'Required'
+        helper_text_mode:  'on_error'
+        icon_right: 'account'
+        icon_right_color: app.theme_cls.primary_color
+        required: True
+        mode: "rectangle"
+    MDRaisedButton:
+        text:'Signup'
+        size_hint: (0.13,0.07)
+        pos_hint: {'center_x':0.5,'center_y':0.2}
+        on_press: app.signup()
+
+    MDTextButton:
+        text: 'Already have an account'
+        pos_hint: {'center_x':0.5,'center_y':0.1}
+        on_press:
+            root.manager.current = 'loginscreen'
+            root.manager.transition.direction = 'down'
+
+
+
+
+<MainScreen>:
+    name: 'mainscreen'
+    MDLabel:
+        id:username_info
+        text:'Hello Main'
+        font_style:'H1'
+        halign:'center'
+
+'''
+
+
+class WelcomeScreen(Screen):
     pass
 
 
-class ProfileScreen(Screen):
-    pass
-class UploadScreen(Screen):
-    pass
-class LoginScreen(MDScreen):
+class MainScreen(Screen):
     pass
 
 
+class LoginScreen(Screen):
+    pass
 
-class Accont:
-    def __init__(self):
-        firebaseConfig = {
-            "apiKey": "AIzaSyBniiXUdMN3CfbsvEMnF3HRpuLNB-YpVZY",
-            "authDomain": "amigo-virtual-6960b.firebaseapp.com",
-            "projectId": "amigo-virtual-6960b",
-            "databaseURL": "https://amigo-virtual-6960b.firebaseio.com",
-            "storageBucket": "amigo-virtual-6960b.appspot.com",
-            "messagingSenderId": "924780726622",
-            "appId": "1:924780726622:web:38694cd80c1024d3a6a7cf",
-            "measurementId": "G-T0PYHDD2RB"
-        }
 
-        firebase = pyrebase.initialize_app(firebaseConfig)
-        self.auth = firebase.auth()
-    def sing_up(self, email, password):
-        try:
-            self.auth.create_user_with_email_and_password(email, password)
-            return True
+class SignupScreen(Screen):
+    pass
 
-        except:
-            return False
-class MainApp(MDApp):
 
+sm = ScreenManager()
+sm.add_widget(WelcomeScreen(name='loginscreen'))
+sm.add_widget(MainScreen(name='mainscreen'))
+sm.add_widget(LoginScreen(name='loginscreen'))
+sm.add_widget(SignupScreen(name='signupscreen'))
+
+
+class LoginApp(MDApp):
     def build(self):
-        global scr
-        scr = ScreenManager()
-        Builder.load_string(s)
-        #Builder.load_string(a)
-        self.theme_cls.primary_palette = "Orange"
-        scr.add_widget((Builder.load_file("Main.kv")))
+        self.strng = Builder.load_string(help_str)
+        self.url = "https://santhosh-5732d-default-rtdb.firebaseio.com/.json"
+        return self.strng
 
-        scr.add_widget((Builder.load_string(LO)))
-        scr.add_widget(MenuScreen(name='menu'))
-        scr.add_widget(ProfileScreen(name='profile'))
-        scr.add_widget(UploadScreen(name='upload'))
-        scr.add_widget(LoginScreen(name='login'))
-        return scr
+    def signup(self):
+        signupEmail = self.strng.get_screen('signupscreen').ids.signup_email.text
+        signupPassword = self.strng.get_screen('signupscreen').ids.signup_password.text
+        signupUsername = self.strng.get_screen('signupscreen').ids.signup_username.text
+        if signupEmail.split() == [] or signupPassword.split() == [] or signupUsername.split() == []:
+            cancel_btn_username_dialogue = MDFlatButton(text='Retry', on_release=self.close_username_dialog)
+            self.dialog = MDDialog(title='Invalid Input', text='Please Enter a valid Input', size_hint=(0.7, 0.2),
+                                   buttons=[cancel_btn_username_dialogue])
+            self.dialog.open()
+        if len(signupUsername.split()) > 1:
+            cancel_btn_username_dialogue = MDFlatButton(text='Retry', on_release=self.close_username_dialog)
+            self.dialog = MDDialog(title='Invalid Username', text='Please enter username without space',
+                                   size_hint=(0.7, 0.2), buttons=[cancel_btn_username_dialogue])
+            self.dialog.open()
+        else:
+            print(signupEmail, signupPassword)
+            signup_info = str(
+                {f'\"{signupEmail}\":{{"Password":\"{signupPassword}\","Username":\"{signupUsername}\"}}'})
+            signup_info = signup_info.replace(".", "-")
+            signup_info = signup_info.replace("\'", "")
+            to_database = json.loads(signup_info)
+            print((to_database))
+            requests.patch(url=self.url, json=to_database)
+            self.strng.get_screen('loginscreen').manager.current = 'loginscreen'
 
-    def navigation_draw(self):
-        pass
-    def on_start(self):
-        Clock.schedule_once(self.login, 3)
+    auth = '70xAvLkxoemhb6NHpzTUAJEa2sdP4a6VURn2lDhR'
 
-    def login(self, *args):
-        scr.current = "login"
+    def login(self):
+        loginEmail = self.strng.get_screen('loginscreen').ids.login_email.text
+        loginPassword = self.strng.get_screen('loginscreen').ids.login_password.text
+
+        self.login_check = False
+        supported_loginEmail = loginEmail.replace('.', '-')
+        supported_loginPassword = loginPassword.replace('.', '-')
+        request = requests.get(self.url + '?auth=' + self.auth)
+        data = request.json()
+        emails = set()
+        for key, value in data.items():
+            emails.add(key)
+        if supported_loginEmail in emails and supported_loginPassword == data[supported_loginEmail]['Password']:
+            self.username = data[supported_loginEmail]['Username']
+            self.login_check = True
+            self.strng.get_screen('mainscreen').manager.current = 'mainscreen'
+        else:
+            print("user no longer exists")
+
+    def close_username_dialog(self, obj):
+        self.dialog.dismiss()
+
+    def username_changer(self):
+        if self.login_check:
+            self.strng.get_screen('mainscreen').ids.username_info.text = f"welcome {self.username}"
 
 
-
-if __name__ == "__main__":
-    accont = Accont()
-    MainApp().run()
+LoginApp().run()
